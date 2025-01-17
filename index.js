@@ -55,6 +55,7 @@ module.exports = function createPlugin(app) {
       client = mqtt.connect(options.remoteHost, {
         rejectUnauthorized: options.rejectUnauthorized,
         reconnectPeriod: 60000,
+        reconnectOnConnackError: true,
         clientId: app.selfId,
         incomingStore: manager.incoming,
         outgoingStore: manager.outgoing,
