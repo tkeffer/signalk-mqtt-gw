@@ -62,7 +62,16 @@ module.exports = function createPlugin(app) {
         username: options.username,
         password: options.password
       });
-      client.on('error', (err) => console.error(err))
+      client.on('error', (err) => {
+        app.debug('Error occurred:', err.message)
+      });
+      client.on('offline', () => {
+        app.debug('Client is offline. Reconnecting...');
+      });
+
+      client.on('reconnect', () => {
+        app.debug('Attempting to reconnect...');
+      });
 
       let deltaHandler = undefined;
       if (options.selectedOption === '1) vessels.self') {
