@@ -54,6 +54,7 @@ module.exports = function createPlugin(app) {
       await manager.open();
 
       function createMqttClient() {
+        app.debug('Connecting to MQTT server', options.remoteHost)
         return mqtt.connect(options.remoteHost, {
             rejectUnauthorized: options.rejectUnauthorized,
             reconnectPeriod: 300000,
@@ -69,12 +70,16 @@ module.exports = function createPlugin(app) {
 
       client = createMqttClient();
 
+      // Log any error
       client.on('error', (err) => {
         app.debug('Error occurred:', err.message)
       });
+
       // Handle MQTT reconnection
       client.on('reconnect', () => {
+        app.debug("Received 'reconnect' event.")
         client.end(true, () => {
+          app.debug("Attempting to reconnect to MQTT server.")
           client = createMqttClient();
         });
       });
