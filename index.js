@@ -27,7 +27,7 @@ module.exports = function createPlugin(app) {
   plugin.name = 'Signal K - MQTT Gateway';
   plugin.description = 'Plugin that provides gateway functionality between Signal K and MQTT';
 
-  let server; 
+  let server;
   let aedes;
   let ad;
   let client;
@@ -52,25 +52,31 @@ module.exports = function createPlugin(app) {
     }
     async function startMqttClient(manager) {
       await manager.open();
-      client = mqtt.connect(options.remoteHost, {
-        rejectUnauthorized: options.rejectUnauthorized,
-        reconnectPeriod: 300000,
-        reconnectOnConnackError: true,
-        clientId: app.selfId,
-        incomingStore: manager.incoming,
-        outgoingStore: manager.outgoing,
-        username: options.username,
-        password: options.password
-      });
+
+      function createMqttClient() {
+        return mqtt.connect(options.remoteHost, {
+            rejectUnauthorized: options.rejectUnauthorized,
+            reconnectPeriod: 300000,
+            reconnectOnConnackError: true,
+            clientId: app.selfId,
+            incomingStore: manager.incoming,
+            outgoingStore: manager.outgoing,
+            username: options.username,
+            password: options.password
+          }
+        )
+      }
+
+      client = createMqttClient();
+
       client.on('error', (err) => {
         app.debug('Error occurred:', err.message)
       });
-      client.on('offline', () => {
-        app.debug('Client is offline. Reconnecting...');
-      });
-
+      // Handle MQTT reconnection
       client.on('reconnect', () => {
-        app.debug('Attempting to reconnect...');
+        client.end(true, () => {
+          client = createMqttClient();
+        });
       });
 
       let deltaHandler = undefined;
@@ -103,7 +109,7 @@ module.exports = function createPlugin(app) {
         stopManager()
         deltaHandler && app.signalk.removeListener('delta', deltaHandler);
       });
-    }    
+    }
   };
 
   async function stopManager() {
@@ -298,12 +304,12 @@ module.exports = function createPlugin(app) {
         ad.start();
         app.debug(
           'MQTT server is advertised on mDNS as mqtt.tcp://<hostname>:' + options.port
-        );  
+        );
       } catch (e) {
         console.error(e.message);
       }
 
-      onStop.push(_ => { 
+      onStop.push(_ => {
         server.close()
         aedes.close()
         if (ad) {
@@ -336,7 +342,7 @@ module.exports = function createPlugin(app) {
       if (typeof value === 'object') {
         return JSON.stringify(value)
       }
-      return value.toString()  
+      return value.toString()
     }
   }
 
