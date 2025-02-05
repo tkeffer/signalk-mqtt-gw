@@ -72,15 +72,16 @@ module.exports = function createPlugin(app) {
 
       // Log any error
       client.on('error', (err) => {
-        app.debug('Error occurred:', err.message)
+        app.debug('Error occurred. Error:', err, 'Message:', err.message)
       });
 
       // Handle MQTT reconnection
       client.on('reconnect', () => {
-        app.debug("Received 'reconnect' event.")
+        app.debug("Received 'reconnect' event. Ending previous connection.")
         client.end(true, () => {
           app.debug("Attempting to reconnect to MQTT server.")
           client = createMqttClient();
+          app.debug("Reconnect successful.")
         });
       });
 
